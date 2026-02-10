@@ -1,8 +1,3 @@
-/**
- * Reusable API client for the Notes API (Expand Testing).
- * All requests use application/x-www-form-urlencoded where applicable and Accept: application/json.
- */
-
 import type { APIRequestContext } from '@playwright/test';
 import { BASE_URL } from '../config/env';
 
@@ -67,9 +62,6 @@ export interface NoteData {
   completed: boolean;
 }
 
-/**
- * Notes API client. Wraps Playwright's APIRequestContext with typed methods for users and notes.
- */
 export class NotesApi {
   constructor(private request: APIRequestContext) {}
 
