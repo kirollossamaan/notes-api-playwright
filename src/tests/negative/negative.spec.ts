@@ -5,33 +5,10 @@
  */
 
 import { test, expect } from '../../fixtures/api-context';
-import type { APIResponse } from '@playwright/test';
-import type { ApiResponse, LoginData } from '../../api/notes-api';
+import type { LoginData } from '../../api/notes-api';
 import { BASE_URL } from '../../config/env';
-
-/** Unique string for dynamic test data. */
-function randomString(prefix: string): string {
-  return `${prefix}${Date.now()}${Math.floor(Math.random() * 10000)}`;
-}
-
-/** Random alphanumeric password of given length. */
-function randomPassword(len: number = 10): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let s = '';
-  for (let i = 0; i < len; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
-  return s;
-}
-
-/** Attach response body to the test report (shown in HTML report). */
-async function attachResponseToReport(
-  testInfo: { attach: (name: string, options: { body: string; contentType: string }) => Promise<void> },
-  response: APIResponse,
-  label: string
-): Promise<void> {
-  const body = await response.text();
-  const status = response.status();
-  await testInfo.attach(`response-${label} (${status})`, { body, contentType: 'application/json' });
-}
+import { randomString, randomPassword } from '../../helpers/test-data';
+import { attachResponseToReport, parseJson } from '../../helpers/report';
 
 test.describe('Negative scenarios', () => {
   // --- Register ---
@@ -54,7 +31,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, second, 'register-duplicate');
     expect(second.status()).toBe(409);
 
-    const json = (await second.json()) as ApiResponse;
+    const json = await parseJson(second);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/already exists|same email/i);
   });
@@ -68,7 +45,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'register-name-too-short');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/name.*4.*30|user name/i);
   });
@@ -83,7 +60,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'register-name-too-long');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/name.*4.*30|user name/i);
   });
@@ -97,7 +74,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'register-password-too-short');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/password.*6.*30|password must/i);
   });
@@ -112,7 +89,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'register-password-too-long');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/password.*6.*30|password must/i);
   });
@@ -128,7 +105,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, loginRes, 'login-wrong-password');
     expect(loginRes.status()).toBe(401);
 
-    const json = (await loginRes.json()) as ApiResponse;
+    const json = await parseJson(loginRes);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/incorrect email address or password/i);
   });
@@ -141,7 +118,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, loginRes, 'login-nonexistent');
     expect(loginRes.status()).toBe(401);
 
-    const json = (await loginRes.json()) as ApiResponse;
+    const json = await parseJson(loginRes);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/incorrect email address or password/i);
   });
@@ -155,7 +132,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'change-password-no-token');
     expect(res.status()).toBe(401);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/no authentication token|x-auth-token/i);
   });
@@ -166,7 +143,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
 
     const res = await api.changePassword(
@@ -176,7 +153,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'change-password-current-too-short');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/current password.*6.*30/i);
   });
@@ -188,7 +165,7 @@ test.describe('Negative scenarios', () => {
 
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
 
     const changeRes = await api.changePassword(
@@ -198,7 +175,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, changeRes, 'change-password-wrong-current');
     expect(changeRes.status()).toBe(400);
 
-    const json = (await changeRes.json()) as ApiResponse;
+    const json = await parseJson(changeRes);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/current password is incorrect/i);
   });
@@ -209,7 +186,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
 
     const res = await api.changePassword(
@@ -219,7 +196,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'change-password-new-too-short');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/new password.*6.*30/i);
   });
@@ -230,7 +207,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
     const longNewPassword = 'a'.repeat(31);
 
@@ -241,7 +218,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'change-password-new-too-long');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/new password.*6.*30/i);
   });
@@ -252,7 +229,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
 
     const res = await api.changePassword(
@@ -262,7 +239,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'change-password-new-same-as-current');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/new password.*different|should be different/i);
   });
@@ -276,7 +253,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'create-note-no-token');
     expect(res.status()).toBe(401);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/no authentication token|x-auth-token/i);
   });
@@ -287,7 +264,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
 
     const res = await api.createNote(
@@ -297,7 +274,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'create-note-title-too-short');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/title.*4.*100/i);
   });
@@ -308,7 +285,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
     const longTitle = 'A'.repeat(101);
 
@@ -319,7 +296,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'create-note-title-too-long');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/title.*4.*100/i);
   });
@@ -330,7 +307,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
 
     const res = await api.createNote(
@@ -340,7 +317,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'create-note-description-too-short');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/description.*4.*1000/i);
   });
@@ -351,7 +328,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
     const longDescription = 'a'.repeat(1001);
 
@@ -362,7 +339,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'create-note-description-too-long');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/description.*4.*1000/i);
   });
@@ -376,7 +353,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'update-note-no-token');
     expect(res.status()).toBe(401);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/no authentication token|x-auth-token/i);
   });
@@ -387,7 +364,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
 
     const res = await api.updateNote(
@@ -403,7 +380,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'update-note-invalid-id');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/note id must be a valid id|valid id/i);
   });
@@ -414,7 +391,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
 
     const createRes = await api.createNote(
@@ -422,7 +399,7 @@ test.describe('Negative scenarios', () => {
       token
     );
     expect(createRes.status()).toBe(200);
-    const createJson = (await createRes.json()) as ApiResponse<{ id: string }>;
+    const createJson = await parseJson<{ id: string }>(createRes);
     const noteId = createJson.data!.id;
 
     const res = await api.updateNote(
@@ -433,7 +410,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'update-note-title-too-short');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/title.*4.*100/i);
   });
@@ -444,7 +421,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
 
     const createRes = await api.createNote(
@@ -452,7 +429,7 @@ test.describe('Negative scenarios', () => {
       token
     );
     expect(createRes.status()).toBe(200);
-    const createJson = (await createRes.json()) as ApiResponse<{ id: string }>;
+    const createJson = await parseJson<{ id: string }>(createRes);
     const noteId = createJson.data!.id;
     const longTitle = 'A'.repeat(101);
 
@@ -464,7 +441,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'update-note-title-too-long');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/title.*4.*100/i);
   });
@@ -475,7 +452,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
 
     const createRes = await api.createNote(
@@ -483,7 +460,7 @@ test.describe('Negative scenarios', () => {
       token
     );
     expect(createRes.status()).toBe(200);
-    const createJson = (await createRes.json()) as ApiResponse<{ id: string }>;
+    const createJson = await parseJson<{ id: string }>(createRes);
     const noteId = createJson.data!.id;
 
     const res = await api.updateNote(
@@ -494,7 +471,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'update-note-description-too-short');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/description.*4.*1000/i);
   });
@@ -505,7 +482,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
 
     const createRes = await api.createNote(
@@ -513,7 +490,7 @@ test.describe('Negative scenarios', () => {
       token
     );
     expect(createRes.status()).toBe(200);
-    const createJson = (await createRes.json()) as ApiResponse<{ id: string }>;
+    const createJson = await parseJson<{ id: string }>(createRes);
     const noteId = createJson.data!.id;
     const longDescription = 'a'.repeat(1001);
 
@@ -525,7 +502,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'update-note-description-too-long');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/description.*4.*1000/i);
   });
@@ -538,7 +515,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'delete-note-no-token');
     expect(res.status()).toBe(401);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/no authentication token|x-auth-token/i);
   });
@@ -549,14 +526,14 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
 
     const res = await api.deleteNote('invalid-note-id-12345', token);
     await attachResponseToReport(testInfo, res, 'delete-note-invalid-id');
     expect(res.status()).toBe(400);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/note id must be a valid id|valid id/i);
   });
@@ -567,7 +544,7 @@ test.describe('Negative scenarios', () => {
     await api.register({ name: randomString('User'), email, password });
     const loginRes = await api.login({ email, password });
     expect(loginRes.status()).toBe(200);
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     const token = loginJson.data!.token;
 
     const createRes = await api.createNote(
@@ -575,7 +552,7 @@ test.describe('Negative scenarios', () => {
       token
     );
     expect(createRes.status()).toBe(200);
-    const createJson = (await createRes.json()) as ApiResponse<{ id: string }>;
+    const createJson = await parseJson<{ id: string }>(createRes);
     const noteId = createJson.data!.id;
 
     const firstDelete = await api.deleteNote(noteId, token);
@@ -585,7 +562,7 @@ test.describe('Negative scenarios', () => {
     await attachResponseToReport(testInfo, res, 'delete-note-already-deleted');
     expect(res.status()).toBe(404);
 
-    const json = (await res.json()) as ApiResponse;
+    const json = await parseJson(res);
     expect(json.success).toBe(false);
     expect(json.message?.toLowerCase()).toMatch(/no note was found|maybe it was deleted/i);
   });

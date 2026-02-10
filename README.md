@@ -34,15 +34,18 @@ Automated API tests for the [Swagger Notes API](https://practice.expandtesting.c
 notes-api-playwright/
 ├── package.json                # Dependencies and npm scripts
 ├── tsconfig.json               # TypeScript compiler options
-├── playwright.config.ts        # Playwright test runner config (projects, baseURL, reporter)
+├── playwright.config.ts        # Playwright test runner config (imports BASE_URL from src/config/env)
 ├── .env.example                # Example env vars (e.g. BASE_URL)
 ├── src/
 │   ├── config/
-│   │   └── env.ts              # Base URL and environment
+│   │   └── env.ts              # Single source for BASE_URL (used by API client and Playwright config)
 │   ├── api/
-│   │   └── notes-api.ts        # Reusable API client
+│   │   └── notes-api.ts        # Reusable typed API client (users + notes)
 │   ├── fixtures/
-│   │   └── api-context.ts      # Playwright fixtures (api)
+│   │   └── api-context.ts      # Playwright fixtures (injects NotesApi as `api`)
+│   ├── helpers/
+│   │   ├── test-data.ts        # randomString, randomPassword (shared test data)
+│   │   └── report.ts           # attachResponseToReport, parseJson<T> (report + response parsing)
 │   └── tests/
 │       ├── e2e/
 │       │   └── full-flow.spec.ts    # E2E: Register → Login → Change password → Create → Update → Delete
@@ -140,11 +143,11 @@ Run all tests:
 npm test
 ```
 
-Run by project:
+Run by folder (e2e only or negative only):
 
 ```bash
-npx playwright test --project=e2e
-npx playwright test --project=negative
+npx playwright test src/tests/e2e
+npx playwright test src/tests/negative
 ```
 
 ## Viewing the report

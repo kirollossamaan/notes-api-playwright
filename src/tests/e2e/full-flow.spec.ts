@@ -4,34 +4,11 @@
  */
 
 import { test, expect } from '../../fixtures/api-context';
-import type { APIResponse } from '@playwright/test';
-import type { ApiResponse, UserData, LoginData, NoteData } from '../../api/notes-api';
+import type { UserData, LoginData, NoteData } from '../../api/notes-api';
+import { randomString, randomPassword } from '../../helpers/test-data';
+import { attachResponseToReport, parseJson } from '../../helpers/report';
 
 const CATEGORIES = ['Home', 'Work', 'Personal'];
-
-/** Unique string for dynamic test data (avoids collisions across runs). */
-function randomString(prefix: string): string {
-  return prefix + Date.now() + Math.floor(Math.random() * 10000);
-}
-
-/** Random alphanumeric password of given length. */
-function randomPassword(len: number = 10): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let s = '';
-  for (let i = 0; i < len; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
-  return s;
-}
-
-/** Attach response body to the test report for debugging (shown in HTML report). */
-async function attachResponseToReport(
-  testInfo: { attach: (name: string, options: { body: string; contentType: string }) => Promise<void> },
-  response: APIResponse,
-  label: string
-): Promise<void> {
-  const body = await response.text();
-  const status = response.status();
-  await testInfo.attach('response-' + label + ' (' + status + ')', { body, contentType: 'application/json' });
-}
 
 test.describe('Full E2E flow', () => {
   test('Register -> Login -> Change password -> Create note -> Update note -> Delete note', async (
@@ -47,7 +24,7 @@ test.describe('Full E2E flow', () => {
     await attachResponseToReport(testInfo, registerRes, 'register');
     expect(registerRes.status()).toBe(201);
 
-    const registerJson = (await registerRes.json()) as ApiResponse<UserData>;
+    const registerJson = await parseJson<UserData>(registerRes);
     expect(registerJson.success).toBe(true);
     expect(registerJson.status).toBe(201);
     expect(registerJson.message).toMatch(/created/i);
@@ -58,7 +35,7 @@ test.describe('Full E2E flow', () => {
     await attachResponseToReport(testInfo, loginRes, 'login');
     expect(loginRes.status()).toBe(200);
 
-    const loginJson = (await loginRes.json()) as ApiResponse<LoginData>;
+    const loginJson = await parseJson<LoginData>(loginRes);
     expect(loginJson.success).toBe(true);
     expect(loginJson.data?.token).toBeDefined();
     const token = loginJson.data!.token;
@@ -70,14 +47,14 @@ test.describe('Full E2E flow', () => {
     await attachResponseToReport(testInfo, changePwdRes, 'change-password');
     expect(changePwdRes.status()).toBe(200);
 
-    const changePwdJson = (await changePwdRes.json()) as ApiResponse;
+    const changePwdJson = await parseJson(changePwdRes);
     expect(changePwdJson.success).toBe(true);
     expect(changePwdJson.message).toBeDefined();
 
     const loginAfterPwdRes = await api.login({ email: userEmail, password: newPassword });
     await attachResponseToReport(testInfo, loginAfterPwdRes, 'login-after-password-change');
     expect(loginAfterPwdRes.status()).toBe(200);
-    const loginAfterPwdJson = (await loginAfterPwdRes.json()) as ApiResponse<LoginData>;
+    const loginAfterPwdJson = await parseJson<LoginData>(loginAfterPwdRes);
     expect(loginAfterPwdJson.success).toBe(true);
     const tokenAfterPwd = loginAfterPwdJson.data!.token;
 
@@ -92,7 +69,7 @@ test.describe('Full E2E flow', () => {
     await attachResponseToReport(testInfo, createNoteRes, 'create-note');
     expect(createNoteRes.status()).toBe(200);
 
-    const createNoteJson = (await createNoteRes.json()) as ApiResponse<NoteData>;
+    const createNoteJson = await parseJson<NoteData>(createNoteRes);
     expect(createNoteJson.success).toBe(true);
     expect(createNoteJson.data?.id).toBeDefined();
     const noteId = createNoteJson.data!.id;
@@ -110,7 +87,7 @@ test.describe('Full E2E flow', () => {
     await attachResponseToReport(testInfo, updateNoteRes, 'update-note');
     expect(updateNoteRes.status()).toBe(200);
 
-    const updateNoteJson = (await updateNoteRes.json()) as ApiResponse<NoteData>;
+    const updateNoteJson = await parseJson<NoteData>(updateNoteRes);
     expect(updateNoteJson.success).toBe(true);
     expect(updateNoteJson.data?.title).toBe(updateTitle);
     expect(updateNoteJson.data?.description).toBe(updateDescription);
@@ -121,7 +98,7 @@ test.describe('Full E2E flow', () => {
     await attachResponseToReport(testInfo, deleteNoteRes, 'delete-note');
     expect(deleteNoteRes.status()).toBe(200);
 
-    const deleteNoteJson = (await deleteNoteRes.json()) as ApiResponse;
+    const deleteNoteJson = await parseJson(deleteNoteRes);
     expect(deleteNoteJson.success).toBe(true);
     expect(deleteNoteJson.message).toBeDefined();
   });

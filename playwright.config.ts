@@ -4,9 +4,7 @@
  */
 
 import { defineConfig } from '@playwright/test';
-
-const BASE_URL =
-  process.env.BASE_URL || 'https://practice.expandtesting.com/notes/api';
+import { BASE_URL } from './src/config/env';
 
 export default defineConfig({
   testDir: './src/tests',
