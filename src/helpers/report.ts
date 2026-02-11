@@ -3,7 +3,7 @@
  */
 
 import type { APIResponse } from '@playwright/test';
-import type { ApiResponse } from '../api/notes-api';
+import type { ApiResponse } from '../api/types';
 
 /** Test info with attach (minimal type for report helpers). */
 export interface TestInfoAttach {

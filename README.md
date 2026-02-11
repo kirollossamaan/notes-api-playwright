@@ -1,156 +1,156 @@
-# Notes API – Playwright API Tests (TypeScript)
+# Notes API – Playwright API Tests
 
-Automated API tests for the [Swagger Notes API](https://practice.expandtesting.com/notes/api/api-docs/), built with **Microsoft Playwright** and **TypeScript**. Covers user registration, login, change password, and full CRUD on notes, including E2E and negative scenarios with response-body reporting.
-
----
+Automated API test suite for the [Notes API](https://practice.expandtesting.com/notes/api/api-docs/) (Expand Testing), built with **Playwright** and **TypeScript**. The suite covers user flows (register, login, change password) and full CRUD on notes, with E2E, positive, and negative scenarios. All API responses are attached to the HTML report for debugging.
 
 ## Table of contents
 
+- [Features](#features)
 - [Tech stack](#tech-stack)
 - [Prerequisites](#prerequisites)
+- [Getting started](#getting-started)
+- [Configuration](#configuration)
 - [Project structure](#project-structure)
 - [Test cases](#test-cases)
-- [Installation](#installation)
 - [Running tests](#running-tests)
-- [Viewing the report](#viewing-the-report)
+- [Reports](#reports)
+- [CI](#ci)
 - [References](#references)
 
----
+## Features
+
+- **E2E flow** – Full user journey: register → login → change password → create note → update note → delete note
+- **Positive tests** – Happy-path coverage per endpoint (user and note)
+- **Negative tests** – Validation and error handling (400, 401, 404, 409)
+- **Typed API client** – Shared `NotesApi` with typed request/response interfaces
+- **Response reporting** – Every request/response body attached to the HTML report
+- **CI** – GitHub Actions workflow for runs on the `main` branch
 
 ## Tech stack
 
-- [Playwright](https://playwright.dev/) – API test runner
-- **TypeScript**
-- **Base URL:** `https://practice.expandtesting.com/notes/api` (overridable via env)
+| Technology | Purpose |
+|------------|--------|
+| [Playwright](https://playwright.dev/) | API test runner |
+| TypeScript | Typing and tooling |
+| Node.js 18+ | Runtime |
 
 ## Prerequisites
 
-- **Node.js** 18 or later – [nodejs.org](https://nodejs.org)
-- **npm**
+- **Node.js** 18 or later — [nodejs.org](https://nodejs.org)
+- **npm** (included with Node.js)
 
-## Project structure
+## Getting started
 
-```
-notes-api-playwright/
-├── package.json                # Dependencies and npm scripts
-├── tsconfig.json               # TypeScript compiler options
-├── playwright.config.ts        # Playwright test runner config (imports BASE_URL from src/config/env)
-├── .env.example                # Example env vars (e.g. BASE_URL)
-├── src/
-│   ├── config/
-│   │   └── env.ts              # Single source for BASE_URL (used by API client and Playwright config)
-│   ├── api/
-│   │   └── notes-api.ts        # Reusable typed API client (users + notes)
-│   ├── fixtures/
-│   │   └── api-context.ts      # Playwright fixtures (injects NotesApi as `api`)
-│   ├── helpers/
-│   │   ├── test-data.ts        # randomString, randomPassword (shared test data)
-│   │   └── report.ts           # attachResponseToReport, parseJson<T> (report + response parsing)
-│   └── tests/
-│       ├── e2e/
-│       │   └── full-flow.spec.ts    # E2E: Register → Login → Change password → Create → Update → Delete
-│       └── negative/
-│           └── negative.spec.ts    # Negative and validation scenarios
-└── README.md
-```
-
-## Test cases
-
-**Total: 28 test cases** (1 E2E, 27 negative)
-
-### E2E (`full-flow.spec.ts`)
-
-| Test |
-|------|
-| Register → Login → Change password → Create note → Update note → Delete note |
-
-### Negative (`negative.spec.ts`)
-
-**Register**
-
-| Test | Expected |
-|------|----------|
-| Register with duplicate email returns 409 | 409 |
-| Register with name too short returns 400 | 400 |
-| Register with name too long returns 400 | 400 |
-| Register with password too short returns 400 | 400 |
-| Register with password too long returns 400 | 400 |
-
-**Login**
-
-| Test | Expected |
-|------|----------|
-| Login with wrong password returns 401 | 401 |
-| Login with non-existent email returns 401 | 401 |
-
-**Change password**
-
-| Test | Expected |
-|------|----------|
-| Change password without token returns 401 | 401 |
-| Change password with current password too short returns 400 | 400 |
-| Change password with wrong current password returns 400 | 400 |
-| Change password with new password too short returns 400 | 400 |
-| Change password with new password too long returns 400 | 400 |
-| Change password with new password same as current returns 400 | 400 |
-
-**Create note**
-
-| Test | Expected |
-|------|----------|
-| Create note without token returns 401 | 401 |
-| Create note with title too short returns 400 | 400 |
-| Create note with title too long returns 400 | 400 |
-| Create note with description too short returns 400 | 400 |
-| Create note with description too long returns 400 | 400 |
-
-**Update note**
-
-| Test | Expected |
-|------|----------|
-| Update note without token returns 401 | 401 |
-| Update note with invalid note id returns 400 | 400 |
-| Update note with title too short returns 400 | 400 |
-| Update note with title too long returns 400 | 400 |
-| Update note with description too short returns 400 | 400 |
-| Update note with description too long returns 400 | 400 |
-
-**Delete note**
-
-| Test | Expected |
-|------|----------|
-| Delete note without token returns 401 | 401 |
-| Delete note with invalid note id returns 400 | 400 |
-| Delete note with non-existent or already deleted id returns 404 | 404 |
-
-Response bodies are attached to the HTML report for all requests (success and failure).
-
----
-
-## Installation
-
-From the project root (`notes-api-playwright/`):
+Clone the repository and install dependencies:
 
 ```bash
+git clone <repository-url>
+cd notes-api-playwright
 npm install
 ```
 
-## Running tests
-
-Run all tests:
+Run the full test suite:
 
 ```bash
 npm test
 ```
 
-Run by folder (e2e only or negative only):
+## Configuration
 
-```bash
-npx playwright test src/tests/e2e
-npx playwright test src/tests/negative
+| Variable | Description | Default |
+|----------|-------------|--------|
+| `BASE_URL` | Notes API base URL | `https://practice.expandtesting.com/notes/api` |
+
+Set `BASE_URL` in a `.env` file (see `.env.example`) or in the environment. The same value is used by the API client and Playwright config.
+
+## Project structure
+
+```
+notes-api-playwright/
+├── package.json
+├── tsconfig.json
+├── playwright.config.ts
+├── .env.example
+├── src/
+│   ├── config/
+│   │   └── env.ts              # BASE_URL (single source of truth)
+│   ├── api/
+│   │   ├── types.ts             # Shared types (ApiResponse, UserData, LoginData, NoteData)
+│   │   ├── notes-api.ts         # NotesApi client (composes user + note endpoints)
+│   │   ├── user/
+│   │   │   ├── register.ts
+│   │   │   ├── login.ts
+│   │   │   └── changePassword.ts
+│   │   └── note/
+│   │       ├── createNote.ts
+│   │       ├── updateNote.ts
+│   │       └── deleteNote.ts
+│   ├── fixtures/
+│   │   └── api-context.ts       # Playwright fixture: injects NotesApi as `api`
+│   ├── helpers/
+│   │   ├── test-data.ts         # randomString, randomPassword
+│   │   └── report.ts            # attachResponseToReport, parseJson<T>
+│   └── tests/
+│       ├── e2e/
+│       │   └── full-flow.spec.ts
+│       ├── positive/
+│       │   ├── user/            # register, login, change-password
+│       │   └── note/            # create, update, delete
+│       └── negative/
+│           ├── user/            # register, login, change-password
+│           └── note/            # create, update, delete
+└── README.md
 ```
 
-## Viewing the report
+## Test cases
+
+**34 tests total** — 1 E2E, 6 positive, 27 negative.
+
+| Category | Count | Description |
+|----------|-------|-------------|
+| E2E | 1 | Full user + notes flow |
+| Positive | 6 | One happy-path test per user/note endpoint |
+| Negative | 27 | Validation and error responses (400, 401, 404, 409) |
+
+### E2E
+
+| Test |
+|------|
+| Register → Login → Change password → Create note → Update note → Delete note |
+
+### Positive (user & note)
+
+| Area | Test |
+|------|------|
+| User · Register | Valid data → 201 |
+| User · Login | Valid credentials → 200 + token |
+| User · Change password | Valid data → 200 |
+| Note · Create | Valid data → 200 |
+| Note · Update | Valid data → 200 |
+| Note · Delete | Valid id → 200 |
+
+### Negative (validation & errors)
+
+| Area | Scenarios |
+|------|-----------|
+| **Register** | Duplicate email (409); name/password length (400) |
+| **Login** | Wrong password, non-existent email (401) |
+| **Change password** | No token (401); invalid/too short/too long/same password (400) |
+| **Create note** | No token (401); title/description length (400) |
+| **Update note** | No token (401); invalid id, title/description length (400) |
+| **Delete note** | No token (401); invalid id (400); missing/deleted id (404) |
+
+Response bodies for all requests are attached to the HTML report (success and failure).
+
+## Running tests
+
+| Command | Description |
+|---------|-------------|
+| `npm test` | Run all tests |
+| `npx playwright test src/tests/e2e` | E2E only |
+| `npx playwright test src/tests/positive` | Positive only |
+| `npx playwright test src/tests/negative` | Negative only |
+
+## Reports
 
 After a run, open the HTML report:
 
@@ -158,9 +158,13 @@ After a run, open the HTML report:
 npm run test:report
 ```
 
-Or open `playwright-report/index.html` in a browser. Response bodies are included for every request in the report.
+Or open `playwright-report/index.html` in a browser. Each request’s response body is included in the report.
+
+## CI
+
+A GitHub Actions workflow runs the test suite on every push and pull request to the `main` branch. The Playwright HTML report is uploaded as an artifact (retention: 7 days).
 
 ## References
 
 - [Playwright](https://playwright.dev/)
-- [Swagger Notes API](https://practice.expandtesting.com/notes/api/api-docs/)
+- [Notes API (Swagger)](https://practice.expandtesting.com/notes/api/api-docs/)

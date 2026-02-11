@@ -1,117 +1,47 @@
+/**
+ * Reusable API client for the Notes API. Composes user and note endpoints.
+ * Use via the `api` fixture in tests.
+ */
+
 import type { APIRequestContext } from '@playwright/test';
-import { BASE_URL } from '../config/env';
+import * as registerModule from './user/register';
+import * as loginModule from './user/login';
+import * as changePasswordModule from './user/changePassword';
+import * as createNoteModule from './note/createNote';
+import * as updateNoteModule from './note/updateNote';
+import * as deleteNoteModule from './note/deleteNote';
 
-const ACCEPT_JSON = { Accept: 'application/json' };
-
-/** Request/response body types */
-
-export interface RegisterBody {
-  name: string;
-  email: string;
-  password: string;
-}
-
-export interface LoginBody {
-  email: string;
-  password: string;
-}
-
-export interface ChangePasswordBody {
-  currentPassword: string;
-  newPassword: string;
-}
-
-export interface CreateNoteBody {
-  title: string;
-  description: string;
-  category: string;
-}
-
-export interface UpdateNoteBody {
-  title: string;
-  description: string;
-  category: string;
-  completed: string;
-}
-
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  message?: string;
-  status?: number;
-  data?: T;
-}
-
-export interface UserData {
-  id: string;
-  email: string;
-  name?: string;
-}
-
-export interface LoginData {
-  id: string;
-  name: string;
-  email: string;
-  token: string;
-}
-
-export interface NoteData {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  completed: boolean;
-}
+export type { RegisterBody } from './user/register';
+export type { LoginBody } from './user/login';
+export type { ChangePasswordBody } from './user/changePassword';
+export type { CreateNoteBody } from './note/createNote';
+export type { UpdateNoteBody } from './note/updateNote';
+export type { ApiResponse, UserData, LoginData, NoteData } from './types';
 
 export class NotesApi {
   constructor(private request: APIRequestContext) {}
 
-  /** POST /users/register */
-  async register(body: RegisterBody) {
-    return this.request.post(`${BASE_URL}/users/register`, {
-      headers: ACCEPT_JSON,
-      form: body as unknown as Record<string, string>,
-    });
+  async register(body: registerModule.RegisterBody) {
+    return registerModule.register(this.request, body);
   }
 
-  /** POST /users/login */
-  async login(body: LoginBody) {
-    return this.request.post(`${BASE_URL}/users/login`, {
-      headers: ACCEPT_JSON,
-      form: body as unknown as Record<string, string>,
-    });
+  async login(body: loginModule.LoginBody) {
+    return loginModule.login(this.request, body);
   }
 
-  /** POST /users/change-password (requires x-auth-token) */
-  async changePassword(body: ChangePasswordBody, token: string) {
-    return this.request.post(`${BASE_URL}/users/change-password`, {
-      headers: { ...ACCEPT_JSON, 'x-auth-token': token },
-      form: body as unknown as Record<string, string>,
-    });
+  async changePassword(body: changePasswordModule.ChangePasswordBody, token: string) {
+    return changePasswordModule.changePassword(this.request, body, token);
   }
 
-  /** POST /notes (requires x-auth-token) */
-  async createNote(body: CreateNoteBody, token: string) {
-    return this.request.post(`${BASE_URL}/notes`, {
-      headers: { ...ACCEPT_JSON, 'x-auth-token': token },
-      form: body as unknown as Record<string, string>,
-    });
+  async createNote(body: createNoteModule.CreateNoteBody, token: string) {
+    return createNoteModule.createNote(this.request, body, token);
   }
 
-  /** PUT /notes/:id (requires x-auth-token) */
-  async updateNote(noteId: string, body: UpdateNoteBody, token: string) {
-    return this.request.put(`${BASE_URL}/notes/${noteId}`, {
-      headers: { ...ACCEPT_JSON, 'x-auth-token': token },
-      form: body as unknown as Record<string, string>,
-    });
+  async updateNote(noteId: string, body: updateNoteModule.UpdateNoteBody, token: string) {
+    return updateNoteModule.updateNote(this.request, noteId, body, token);
   }
 
-  /** DELETE /notes/:id (requires x-auth-token) */
   async deleteNote(noteId: string, token: string) {
-    return this.request.delete(`${BASE_URL}/notes/${noteId}`, {
-      headers: {
-        Accept: 'application/json',
-        'x-auth-token': token,
-      },
-    });
+    return deleteNoteModule.deleteNote(this.request, noteId, token);
   }
 }
