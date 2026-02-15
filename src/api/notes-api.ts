@@ -29,19 +29,19 @@ export class NotesApi {
     return loginModule.login(this.request, body);
   }
 
-  async changePassword(body: changePasswordModule.ChangePasswordBody, token: string) {
+  async changePassword(body: changePasswordModule.ChangePasswordBody, token?: string) {
     return changePasswordModule.changePassword(this.request, body, token);
   }
 
-  async createNote(body: createNoteModule.CreateNoteBody, token: string) {
+  async createNote(body: createNoteModule.CreateNoteBody, token?: string) {
     return createNoteModule.createNote(this.request, body, token);
   }
 
-  async updateNote(noteId: string, body: updateNoteModule.UpdateNoteBody, token: string) {
+  async updateNote(noteId: string, body: updateNoteModule.UpdateNoteBody, token?: string) {
     return updateNoteModule.updateNote(this.request, noteId, body, token);
   }
 
-  async deleteNote(noteId: string, token: string) {
+  async deleteNote(noteId: string, token?: string) {
     return deleteNoteModule.deleteNote(this.request, noteId, token);
   }
 }

@@ -4,15 +4,15 @@
 
 import { test, expect } from '../../../fixtures/api-context';
 import type { LoginData } from '../../../api/notes-api';
-import { BASE_URL } from '../../../config/env';
 import { randomString, randomPassword } from '../../../helpers/test-data';
 import { attachResponseToReport, parseJson } from '../../../helpers/report';
 
 test.describe('Create note (negative)', () => {
-  test('Create note without token returns 401', async ({ request }, testInfo) => {
-    const res = await request.post(`${BASE_URL}/notes`, {
-      headers: { Accept: 'application/json' },
-      form: { title: 'Valid Title', description: 'Valid description here', category: 'Home' },
+  test('Create note without token returns 401', async ({ api }, testInfo) => {
+    const res = await api.createNote({
+      title: 'Valid Title',
+      description: 'Valid description here',
+      category: 'Home',
     });
     await attachResponseToReport(testInfo, res, 'create-note-no-token');
     expect(res.status()).toBe(401);

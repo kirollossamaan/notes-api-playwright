@@ -4,20 +4,16 @@
 
 import { test, expect } from '../../../fixtures/api-context';
 import type { LoginData } from '../../../api/notes-api';
-import { BASE_URL } from '../../../config/env';
 import { randomString, randomPassword } from '../../../helpers/test-data';
 import { attachResponseToReport, parseJson } from '../../../helpers/report';
 
 test.describe('Update note (negative)', () => {
-  test('Update note without token returns 401', async ({ request }, testInfo) => {
-    const res = await request.put(`${BASE_URL}/notes/507f1f77bcf86cd799439011`, {
-      headers: { Accept: 'application/json' },
-      form: {
-        title: 'Valid Title',
-        description: 'Valid description here',
-        category: 'Home',
-        completed: 'false',
-      },
+  test('Update note without token returns 401', async ({ api }, testInfo) => {
+    const res = await api.updateNote('507f1f77bcf86cd799439011', {
+      title: 'Valid Title',
+      description: 'Valid description here',
+      category: 'Home',
+      completed: 'false',
     });
     await attachResponseToReport(testInfo, res, 'update-note-no-token');
     expect(res.status()).toBe(401);

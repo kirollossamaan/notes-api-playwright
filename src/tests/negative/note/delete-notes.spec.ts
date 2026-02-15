@@ -4,15 +4,12 @@
 
 import { test, expect } from '../../../fixtures/api-context';
 import type { LoginData } from '../../../api/notes-api';
-import { BASE_URL } from '../../../config/env';
 import { randomString, randomPassword } from '../../../helpers/test-data';
 import { attachResponseToReport, parseJson } from '../../../helpers/report';
 
 test.describe('Delete note (negative)', () => {
-  test('Delete note without token returns 401', async ({ request }, testInfo) => {
-    const res = await request.delete(`${BASE_URL}/notes/507f1f77bcf86cd799439011`, {
-      headers: { Accept: 'application/json' },
-    });
+  test('Delete note without token returns 401', async ({ api }, testInfo) => {
+    const res = await api.deleteNote('507f1f77bcf86cd799439011');
     await attachResponseToReport(testInfo, res, 'delete-note-no-token');
     expect(res.status()).toBe(401);
     const json = await parseJson(res);

@@ -11,10 +11,11 @@ export interface ChangePasswordBody {
 export async function changePassword(
   request: APIRequestContext,
   body: ChangePasswordBody,
-  token: string
+  token?: string
 ) {
+  const headers = token ? { ...ACCEPT_JSON, 'x-auth-token': token } : ACCEPT_JSON;
   return request.post(`${BASE_URL}/users/change-password`, {
-    headers: { ...ACCEPT_JSON, 'x-auth-token': token },
+    headers,
     form: body as unknown as Record<string, string>,
   });
 }

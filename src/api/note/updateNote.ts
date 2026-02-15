@@ -14,10 +14,11 @@ export async function updateNote(
   request: APIRequestContext,
   noteId: string,
   body: UpdateNoteBody,
-  token: string
+  token?: string
 ) {
+  const headers = token ? { ...ACCEPT_JSON, 'x-auth-token': token } : ACCEPT_JSON;
   return request.put(`${BASE_URL}/notes/${noteId}`, {
-    headers: { ...ACCEPT_JSON, 'x-auth-token': token },
+    headers,
     form: body as unknown as Record<string, string>,
   });
 }

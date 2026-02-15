@@ -12,10 +12,11 @@ export interface CreateNoteBody {
 export async function createNote(
   request: APIRequestContext,
   body: CreateNoteBody,
-  token: string
+  token?: string
 ) {
+  const headers = token ? { ...ACCEPT_JSON, 'x-auth-token': token } : ACCEPT_JSON;
   return request.post(`${BASE_URL}/notes`, {
-    headers: { ...ACCEPT_JSON, 'x-auth-token': token },
+    headers,
     form: body as unknown as Record<string, string>,
   });
 }

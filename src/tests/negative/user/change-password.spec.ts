@@ -4,15 +4,14 @@
 
 import { test, expect } from '../../../fixtures/api-context';
 import type { LoginData } from '../../../api/notes-api';
-import { BASE_URL } from '../../../config/env';
 import { randomString, randomPassword } from '../../../helpers/test-data';
 import { attachResponseToReport, parseJson } from '../../../helpers/report';
 
 test.describe('Change password (negative)', () => {
-  test('Change password without token returns 401', async ({ request }, testInfo) => {
-    const res = await request.post(`${BASE_URL}/users/change-password`, {
-      headers: { Accept: 'application/json' },
-      form: { currentPassword: 'somepass123', newPassword: 'newpass123' },
+  test('Change password without token returns 401', async ({ api }, testInfo) => {
+    const res = await api.changePassword({
+      currentPassword: 'somepass123',
+      newPassword: 'newpass123',
     });
     await attachResponseToReport(testInfo, res, 'change-password-no-token');
     expect(res.status()).toBe(401);
